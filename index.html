@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>广告地狱 · 净网行动</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{
+  font-family:"SimSun","宋体","Courier New",monospace;
+  background:#06060f;color:#fff;
+  -webkit-user-select:none;user-select:none;
+}
+#game{
+  position:fixed;inset:0;overflow:hidden;
+  background:
+    radial-gradient(ellipse at 15% 15%, rgba(70,25,140,.5), transparent 55%),
+    radial-gradient(ellipse at 85% 80%, rgba(0,80,150,.4), transparent 55%),
+    repeating-linear-gradient(0deg, rgba(255,255,255,.025) 0 1px, transparent 1px 3px),
+    #06060f;
+}
+
+/* ============ 顶栏 ============ */
+#topbar{
+  position:absolute;top:0;left:0;right:0;height:66px;
+  display:flex;align-items:center;gap:16px;padding:0 14px;
+  background:linear-gradient(#12124a,#0a0a2a);
+  border-bottom:2px solid #3a3a8a;
+  box-shadow:0 2px 14px rgba(0,0,0,.85);
+  z-index:500;
+}
+.clockbox{
+  background:#000;border:2px solid #2a2a2a;border-radius:3px;
+  padding:2px 10px;box-shadow:inset 0 0 12px rgba(0,255,120,.25);
+  flex:0 0 auto;
+}
+.clockbox .lbl{font-size:9px;color:#4a4;letter-spacing:2px}
+.clockbox .val{
+  font-family:"Courier New",monospace;font-size:20px;font-weight:bold;
+  color:#3f6;text-shadow:0 0 8px #0f6;letter-spacing:1px;
+}
+.pat-wrap{flex:1 1 auto;max-width:420px}
+.pat-top{display:flex;justify-content:space-between;font-size:11px;color:#99a;margin-bottom:3px}
+.pat-bar{height:18px;background:#000;border:2px solid #3a3a5a;border-radius:2px;overflow:hidden}
+#patFill{height:100%;width:100%;background:#4c4;transition:width .12s linear}
+.prog-wrap{margin-left:auto;text-align:right;flex:0 0 auto}
+.prog-wrap .lbl{font-size:9px;color:#88a;letter-spacing:1px}
+.prog-wrap .val{font-family:"Courier New",monospace;font-size:19px;color:#fd4;text-shadow:0 0 8px #fa0}
+
+/* ============ 广告窗口 ============ */
+.ad{
+  position:absolute;
+  background:#c0c0c0;
+  border:2px solid;
+  border-color:#fff #404040 #404040 #fff;
+  box-shadow:4px 4px 0 rgba(0,0,0,.55);
+  display:flex;flex-direction:column;
+  overflow:hidden;
+  animation:popin .16s ease-out;
+  z-index:10;
+  color:#000;
+}
+@keyframes popin{from{transform:scale(.75);opacity:0}to{transform:scale(1);opacity:1}}
+.ad.closing{animation:popout .16s ease-in forwards}
+@keyframes popout{to{transform:scale(.75);opacity:0}}
+
+.ad-bar{
+  height:20px;flex:0 0 20px;
+  background:linear-gradient(90deg,#000080,#1084d0);
+  color:#fff;font-size:12px;
+  display:flex;align-items:center;
+  padding:0 24px 0 5px;
+  white-space:nowrap;overflow:hidden;
+}
+.ad-body{
+  flex:1;position:relative;overflow:hidden;
+  background:#fff;padding:5px;font-size:12px;
+}
+.ad-x{
+  position:absolute;z-index:3;
+  background:#c0c0c0;border:1px solid;
+  border-color:#fff #404040 #404040 #fff;
+  color:#000;font-family:inherit;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;line-height:1;padding:0;
+}
+.ad-x:hover{background:#e8e8e8}
+.ad-x:active{border-color:#404040 #fff #fff #404040}
+.ad-x.disabled{background:#888;color:#ccc;cursor:not-allowed}
+.ad-x.tired{animation:tired .5s infinite alternate}
+@keyframes tired{to{opacity:.4}}
+
+.fakebtn{
+  font-family:inherit;font-size:11px;margin-top:4px;padding:2px 10px;
+  background:#d0d0d0;border:1px solid;
+  border-color:#fff #404040 #404040 #fff;
+  color:#000;cursor:pointer;
+}
+.fakebtn:active{border-color:#404040 #fff #fff #404040}
+.blink{animation:blink .6s steps(2) infinite}
+@keyframes blink{50%{opacity:.15}}
+
+/* 滑块 */
+.sl-wrap{
+  position:absolute;left:0;right:0;bottom:0;
+  padding:3px 6px 5px;background:#e8e8f0;border-top:1px solid #aaa;
+}
+.sl-txt{font-size:10px;color:#555;text-align:center;margin-bottom:3px}
+.sl-track{
+  position:relative;height:16px;background:#888;
+  border:1px solid #444;border-radius:2px;
+}
+.sl-fill{position:absolute;left:0;top:0;bottom:0;width:0;background:#5c5;pointer-events:none}
+.sl-knob{
+  position:absolute;left:0;top:-2px;width:14px;height:18px;
+  background:#e0e0e0;border:1px solid #333;border-radius:2px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:10px;cursor:grab;touch-action:none;
+}
+.sl-knob:active{cursor:grabbing}
+
+/* 火花 */
+.spark{
+  position:absolute;width:14px;height:14px;margin:-7px 0 0 -7px;
+  border-radius:50%;background:#ff4;
+  box-shadow:0 0 14px #fa0,0 0 28px #f80;
+  pointer-events:none;animation:sp .4s ease-out forwards;z-index:900;
+}
+@keyframes sp{to{transform:scale(2.6);opacity:0}}
+
+/* ============ 遮罩 / 弹窗 ============ */
+#overlay{
+  position:fixed;inset:0;z-index:1000;
+  display:none;align-items:center;justify-content:center;
+  background:rgba(0,0,10,.82);backdrop-filter:blur(2px);
+}
+#overlay.show{display:flex}
+
+.modal{
+  width:min(760px,92vw);max-height:88vh;overflow:auto;
+  background:linear-gradient(#1a1a3a,#0e0e22);
+  border:2px solid #4a4a9a;border-radius:4px;
+  box-shadow:0 0 40px rgba(80,80,255,.35);
+  padding:20px 22px;
+}
+.modal-title{
+  text-align:center;font-size:17px;color:#fd4;
+  text-shadow:0 0 12px rgba(255,200,0,.6);margin-bottom:16px;letter-spacing:1px;
+}
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.card{
+  background:linear-gradient(#242450,#14142c);
+  border:2px solid #3c3c7c;border-radius:4px;
+  padding:14px 10px;text-align:center;cursor:pointer;
+  transition:transform .12s,border-color .12s,box-shadow .12s;
+}
+.card:hover{
+  transform:translateY(-4px);
+  border-color:#fd4;box-shadow:0 0 22px rgba(255,220,60,.35);
+}
+.card-icon{font-size:30px;margin-bottom:6px}
+.card-name{font-size:14px;color:#fff;font-weight:bold;margin-bottom:6px}
+.card-desc{font-size:11px;color:#9aa;line-height:1.6;min-height:44px}
+.card-lv{font-size:10px;color:#fd4;margin-top:6px}
+
+/* 开始 / 结束 */
+.hero{text-align:center;width:min(680px,92vw)}
+.hero h1{
+  font-size:32px;letter-spacing:4px;margin-bottom:6px;
+  color:#fd4;text-shadow:0 0 18px rgba(255,200,0,.7),3px 3px 0 #a00;
+}
+.hero h2{font-size:15px;color:#8af;margin-bottom:18px;font-weight:normal}
+.rules{
+  text-align:left;font-size:12px;color:#bcd;line-height:2;
+  background:rgba(0,0,0,.4);border:1px solid #2a2a5a;
+  padding:14px 18px;border-radius:4px;margin-bottom:20px;
+}
+.rules b{color:#fd4}
+.bigbtn{
+  font-family:inherit;font-size:16px;letter-spacing:3px;
+  padding:10px 44px;cursor:pointer;color:#000;
+  background:linear-gradient(#ffe,#cc9);
+  border:2px solid;border-color:#fff #886 #886 #fff;
+  box-shadow:3px 3px 0 rgba(0,0,0,.6);
+}
+.bigbtn:active{transform:translate(2px,2px);box-shadow:1px 1px 0 rgba(0,0,0,.6)}
+
+.movie-screen{
+  background:#000;border:3px solid #333;border-radius:4px;
+  padding:26px;text-align:center;margin-bottom:18px;
+  box-shadow:inset 0 0 60px rgba(80,160,255,.18);
+}
+.movie-title{font-size:24px;color:#fff;letter-spacing:3px;margin:10px 0}
+.movie-sub{font-size:12px;color:#6a8;letter-spacing:2px}
+.filmstrip{font-size:34px;animation:blink 1.2s steps(2) infinite}
+</style>
+</head>
+<body>
+
+<div id="game">
+  <div id="topbar">
+    <div class="clockbox">
+      <div class="lbl">TIME CLOCK</div>
+      <div class="val" id="clock">00:00</div>
+    </div>
+    <div class="pat-wrap">
+      <div class="pat-top"><span>耐心度</span><span id="patNum">130</span></div>
+      <div class="pat-bar"><div id="patFill"></div></div>
+    </div>
+    <div class="prog-wrap">
+      <div class="lbl">净化进度</div>
+      <div class="val"><span id="progNum">0</span>/<span id="progMax">24</span></div>
+    </div>
+  </div>
+</div>
+
+<div id="overlay" class="show">
+  <div class="hero">
+    <h1>广 告 地 狱</h1>
+    <h2>—— 净 网 行 动 ——</h2>
+    <div class="rules">
+      你只想安安静静看部电影，可弹窗广告像蟑螂一样繁殖。<br>
+      · <b>关闭方式各不相同</b>：有的会跑，有的要等倒计时，有的要长按，有的要拖滑块。<br>
+      · 每关闭 <b>3 个广告</b>，随机获得 <b>三选一强化</b>，强化可叠加，组合出迥异流派。<br>
+      · 广告会 <b>自我增殖</b>，你越拖延，它越疯狂。<br>
+      · 顶部的 <b>耐心度</b> 见底 = 游戏失败。<br>
+      · 净化进度 <b>24/24</b> = 终于可以看电影了。
+    </div>
+    <button class="bigbtn" id="startBtn">开 始 上 网</button>
+  </div>
+</div>
+
+<script>
+/* =========================================================
+   基础工具
+========================================================= */
+const $ = s => document.querySelector(s);
+const rand = (a,b) => a + Math.random()*(b-a);
+const randInt = (a,b) => Math.floor(rand(a,b+1));
+const pick = arr => arr[(Math.random()*arr.length)|0];
+function shuffle(a){ for(let i=a.length-1;i>0;i--){const j=(Math.random()*(i+1))|0;[a[i],a[j]]=[a[j],a[i]];} return a; }
+
+const MAX_ADS = 9;
+
+/* =========================================================
+   广告素材（复古网页风）
+========================================================= */
+const THEMES = [
+  { title:'★ 中奖通知 ★', html:`
+    <div style="text-align:center;padding-top:2px">
+      <div style="font-size:13px;font-weight:bold;color:#e00" class="blink">恭喜您被抽中！</div>
+      <div style="font-size:26px;line-height:1.1;margin:2px 0">🎁</div>
+      <div style="font-size:11px;color:#333">iPhone 15 Pro Max 一台</div>
+      <div style="font-size:10px;color:#888">您是本活动第 1,048,576 位用户</div>
+      <button class="fakebtn">立即领取</button>
+    </div>` },
+
+  { title:'系统警告', html:`
+    <div style="padding:2px">
+      <div style="color:#c00;font-weight:bold;font-size:12px">⚠ 检测到您的电脑存在 3 个风险</div>
+      <div style="height:7px;background:#ddd;margin:7px 0;border:1px solid #999">
+        <div style="height:100%;width:72%;background:linear-gradient(90deg,#f80,#c00)"></div>
+      </div>
+      <div style="font-size:10px;color:#666">扫描引擎 v3.2.1 · 2003-08-12</div>
+      <div style="font-size:10px;color:#666">已拦截木马：<span style="color:#c00">2</span> 个</div>
+      <button class="fakebtn" style="background:#c00;color:#fff">立即修复</button>
+    </div>` },
+
+  { title:'缘分天空聊天室', html:`
+    <div style="background:#ffe;padding:3px;text-align:center">
+      <div style="font-size:11px;color:#a05">💖 同城 3 位美女正在寻找聊天对象</div>
+      <div style="font-size:20px;margin:3px 0">👩‍🦰 👩 👩‍🦱</div>
+      <div style="font-size:10px;color:#999">昵称：小甜甜 · 22 岁 · 距离 2km</div>
+      <button class="fakebtn" style="background:#e05;color:#fff">立即聊天</button>
+    </div>` },
+
+  { title:'极速加速器', html:`
+    <div style="text-align:center;background:#000;color:#0f0;padding:4px;font-family:monospace">
+      <div style="font-size:11px">🚀 网速太慢？</div>
+      <div style="font-size:10px;color:#0a0">当前网速：56.0 Kbps</div>
+      <div style="height:6px;background:#033;margin:5px 10px;border:1px solid #0a0">
+        <div style="height:100%;width:18%;background:#0f0"></div>
+      </div>
+      <div style="font-size:9px;color:#080">提速至 100 Mbps</div>
+      <button class="fakebtn" style="background:#0a0;color:#000">一键加速</button>
+    </div>` },
+
+  { title:'传奇世界', html:`
+    <div style="background:#210;color:#fd0;padding:3px;text-align:center">
+      <div style="font-size:12px;font-weight:bold">⚔ 一刀 999 级</div>
+      <div style="font-size:10px;color:#f80">极品装备 · 点击就送</div>
+      <div style="font-size:20px">🗡️</div>
+      <button class="fakebtn" style="background:#fd0;color:#000">进入游戏</button>
+    </div>` },
+
+  { title:'访客统计', html:`
+    <div style="text-align:center;padding:4px;background:#f0f0ff">
+      <div style="font-size:11px;color:#333">您是本站第</div>
+      <div style="font-family:monospace;font-size:15px;color:#f00;background:#000;padding:1px 5px;display:inline-block">001048576</div>
+      <div style="font-size:11px;color:#333">位访客</div>
+      <div style="font-size:9px;color:#888;margin-top:3px">今日访问量 <b style="color:#00c">12,847</b></div>
+      <button class="fakebtn">免费注册</button>
+    </div>` }
+];
+
+/* =========================================================
+   Buff 池
+========================================================= */
+const BUFFS = [
+  { id:'patience', name:'精神胜利法', icon:'🧘', max:6,
+    desc:'每次关闭广告，恢复 6 点耐心。',
+    apply:s=>{ s.buffs.patiencePerClose += 6; } },
+
+  { id:'progress', name:'效率至上', icon:'⚡', max:3,
+    desc:'每次关闭广告，额外 +1 净化进度。',
+    apply:s=>{ s.buffs.extraProgress += 1; } },
+
+  { id:'chain', name:'多米诺骨牌', icon:'🎯', max:3,
+    desc:'关闭广告时，30% 概率连带关闭另一个。',
+    apply:s=>{ s.buffs.chainChance += 0.30; } },
+
+  { id:'slowspawn', name:'弹窗拦截器', icon:'🛡️', max:3,
+    desc:'广告的自我增殖速度 -25%。',
+    apply:s=>{ s.spawnMul *= 1.34; } },
+
+  { id:'calm', name:'静音模式', icon:'🔇', max:2,
+    desc:'耐心的基础消耗 -40%。',
+    apply:s=>{ s.buffs.baseDrainMul *= 0.60; } },
+
+  { id:'bigx', name:'钛合金鼠标', icon:'🖱️', max:3,
+    desc:'所有关闭按钮尺寸 +40%。',
+    apply:s=>{ s.buffs.xScale += 0.40; } },
+
+  { id:'hold', name:'连点器', icon:'⏱️', max:2,
+    desc:'长按所需时间 -35%。',
+    apply:s=>{ s.buffs.holdMul *= 0.65; } },
+
+  { id:'maxp', name:'续命咖啡', icon:'☕', max:2,
+    desc:'耐心上限 +30，并立即回满。',
+    apply:s=>{ s.maxPatience += 30; s.patience = s.maxPatience; } },
+
+  { id:'auto', name:'自动拦截', icon:'🤖', max:2,
+    desc:'每 9 秒自动关闭一个随机广告。',
+    apply:s=>{ s.buffs.autoClose += 1; } },
+];
+
+/* =========================================================
+   游戏状态
+========================================================= */
+const state = {
+  running:false, paused:false,
+  patience:130, maxPatience:130,
+  progress:0, target:24,
+  closes:0, time:0,
+  ads:[],
+  buffStacks:{},
+  spawnMul:1,
+  autoT:9,
+  emptyT:0,
+  buffs:{
+    patiencePerClose:0, extraProgress:0, chainChance:0,
+    baseDrainMul:1, xScale:1, holdMul:1, autoClose:0
+  }
+};
+
+/* =========================================================
+   HUD
+========================================================= */
+function updateHUD(){
+  const p = Math.max(0, state.patience) / state.maxPatience;
+  const fill = $('#patFill');
+  fill.style.width = (p*100)+'%';
+  fill.style.background = `hsl(${p*110}, 92%, 48%)`;
+  $('#patNum').textContent = Math.ceil(Math.max(0, state.patience));
+  $('#progNum').textContent = Math.min(state.progress, state.target);
+
+  const t = Math.floor(state.time);
+  $('#clock').textContent =
+    String(Math.floor(t/60)).padStart(2,'0') + ':' + String(t%60).padStart(2,'0');
+}
+
+/* =========================================================
+   广告生成
+========================================================= */
+function breedInterval(){
+  const pressure = 1 - (state.progress / state.target) * 0.35;
+  return (10 + Math.random()*5) * state.spawnMul * pressure;
+}
+
+function pickType(){
+  const r = Math.random();
+  if (r < 0.42) return 'basic';
+  if (r < 0.58) return 'runner';
+  if (r < 0.73) return 'countdown';
+  if (r < 0.87) return 'hold';
+  return 'slider';
+}
+
+function randPos(w,h){
+  const W = window.innerWidth, H = window.innerHeight;
+  const padTop = 80, padBottom = 20, padX = 10;
+  const maxX = W - w - padX, maxY = H - h - padBottom;
+  return {
+    x: maxX > padX ? rand(padX, maxX) : Math.max(0,(W-w)/2),
+    y: maxY > padTop ? rand(padTop, maxY) : padTop
+  };
+}
+
+function spawnAd(forceType){
+  if (!state.running || state.paused) return null;
+  if (state.ads.length >= MAX_ADS) return null;
+
+  const type = forceType || pickType();
+  const theme = pick(THEMES);
+  const w = randInt(240, 285);
+  const h = randInt(152, 182);
+  const pos = randPos(w, h);
+
+  const el = document.createElement('div');
+  el.className = 'ad';
+  el.style.width = w+'px';
+  el.style.height = h+'px';
+  el.style.left = pos.x+'px';
+  el.style.top = pos.y+'px';
+  el.style.zIndex = 10 + state.ads.length;
+
+  el.innerHTML = `
+    <div class="ad-bar"><span>${theme.title}</span></div>
+    <div class="ad-body">${theme.html}</div>
+    <button class="ad-x">✕</button>
+  `;
+
+  const xBtn = el.querySelector('.ad-x');
+  const sc = state.buffs.xScale;
+  const bw = Math.round(16*sc), bh = Math.round(14*sc);
+  xBtn.style.width = bw+'px';
+  xBtn.style.height = bh+'px';
+  xBtn.style.fontSize = Math.round(10*sc)+'px';
+  xBtn.style.left = (w - bw - 4) + 'px';
+  xBtn.style.top = '3px';
+
+  const ad = {
+    el, type, w, h, xBtn,
+    breedT: breedInterval(),
+    dead: false,
+    tick: null,
+    slideP: 0
+  };
+
+  setupClose(ad);
+  $('#game').appendChild(el);
+  state.ads.push(ad);
+  return ad;
+}
+
+/* =========================================================
+   关闭机制
+========================================================= */
+function setupClose(ad){
+  const { el, type, w, h, xBtn } = ad;
+  const bw = parseInt(xBtn.style.width);
+  const bh = parseInt(xBtn.style.height);
+
+  switch(type){
+
+    /* --- 普通：点一下 --- */
+    case 'basic': {
+      xBtn.onclick = () => closeAd(ad);
+      break;
+    }
+
+    /* --- 逃跑：鼠标靠近就跑，跑 4 次后累瘫 --- */
+    case 'runner': {
+      let dodges = 4;
+      xBtn.addEventListener('mouseenter', () => {
+        if (dodges <= 0) return;
+        dodges--;
+        xBtn.style.left = randInt(2, Math.max(3, w - bw - 2)) + 'px';
+        xBtn.style.top  = randInt(2, Math.max(3, h - bh - 2)) + 'px';
+        if (dodges === 0) xBtn.classList.add('tired');
+      });
+      xBtn.onclick = () => closeAd(ad);
+      break;
+    }
+
+    /* --- 倒计时：等 3 秒 --- */
+    case 'countdown': {
+      let t = 3;
+      xBtn.disabled = true;
+      xBtn.classList.add('disabled');
+      xBtn.textContent = t;
+      ad.tick = (dt) => {
+        t -= dt;
+        if (t <= 0){
+          xBtn.textContent = '✕';
+          xBtn.disabled = false;
+          xBtn.classList.remove('disabled');
+          ad.tick = null;
+        } else {
+          xBtn.textContent = Math.ceil(t);
+        }
+      };
+      xBtn.onclick = () => { if (!xBtn.disabled) closeAd(ad); };
+      break;
+    }
+
+    /* --- 长按 --- */
+    case 'hold': {
+      const need = 0.9 * state.buffs.holdMul;
+      let hold = 0, pressing = false;
+      const paint = () => {
+        const p = Math.min(1, hold/need) * 100;
+        xBtn.style.background =
+          `linear-gradient(90deg,#3c3 ${p}%,#c0c0c0 ${p}%)`;
+      };
+      xBtn.addEventListener('pointerdown', e => {
+        e.preventDefault();
+        try { xBtn.setPointerCapture(e.pointerId); } catch(_){}
+        pressing = true;
+      });
+      const stop = () => { pressing = false; hold = 0; paint(); };
+      xBtn.addEventListener('pointerup', stop);
+      xBtn.addEventListener('pointercancel', stop);
+      ad.tick = (dt) => {
+        if (!pressing) return;
+        hold += dt;
+        paint();
+        if (hold >= need){ pressing = false; closeAd(ad); }
+      };
+      break;
+    }
+
+    /* --- 滑块 --- */
+    case 'slider': {
+      xBtn.classList.add('disabled');
+      xBtn.style.pointerEvents = 'none';
+
+      const body = el.querySelector('.ad-body');
+      body.insertAdjacentHTML('beforeend', `
+        <div class="sl-wrap">
+          <div class="sl-txt">按住滑块拖到最右侧以关闭</div>
+          <div class="sl-track">
+            <div class="sl-fill"></div>
+            <div class="sl-knob">→</div>
+          </div>
+        </div>`);
+
+      const track = body.querySelector('.sl-track');
+      const knob  = body.querySelector('.sl-knob');
+      const fill  = body.querySelector('.sl-fill');
+      let dragging = false;
+
+      const setP = (p) => {
+        p = Math.max(0, Math.min(1, p));
+        ad.slideP = p;
+        knob.style.left = `calc(${p*100}% - ${p*14}px)`;
+        fill.style.width = (p*100)+'%';
+        if (p >= 0.985) closeAd(ad);
+      };
+
+      knob.addEventListener('pointerdown', e => {
+        e.preventDefault(); e.stopPropagation();
+        dragging = true;
+        try { knob.setPointerCapture(e.pointerId); } catch(_){}
+      });
+      knob.addEventListener('pointermove', e => {
+        if (!dragging) return;
+        const r = track.getBoundingClientRect();
+        setP((e.clientX - r.left - 7) / (r.width - 14));
+      });
+      const up = () => {
+        if (!dragging) return;
+        dragging = false;
+        if (ad.slideP < 0.985) setP(0);
+      };
+      knob.addEventListener('pointerup', up);
+      knob.addEventListener('pointercancel', up);
+      break;
+    }
+  }
+}
+
+/* =========================================================
+   关闭广告
+========================================================= */
+function closeAd(ad){
+  if (!ad || ad.dead) return;
+  ad.dead = true;
+
+  const i = state.ads.indexOf(ad);
+  if (i >= 0) state.ads.splice(i, 1);
+
+  const r = ad.el.getBoundingClientRect();
+  spark(r.left + r.width/2, r.top + r.height/2);
+
+  ad.el.classList.add('closing');
+  setTimeout(() => ad.el.remove(), 170);
+
+  state.progress += 1 + state.buffs.extraProgress;
+  state.closes++;
+
+  if (state.buffs.patiencePerClose){
+    state.patience = Math.min(state.maxPatience,
+      state.patience + state.buffs.patiencePerClose);
+  }
+
+  if (state.progress >= state.target){ win(); return; }
+
+  // 连锁
+  if (state.buffs.chainChance > 0 && Math.random() < state.buffs.chainChance){
+    const others = state.ads.filter(a => !a.dead);
+    if (others.length){
+      const t = pick(others);
+      setTimeout(() => closeAd(t), 150);
+    }
+  }
+
+  // 每 3 次 -> 三选一
+  if (state.closes % 3 === 0 && !state.paused){
+    showBuffChoice();
+  }
+
+  updateHUD();
+}
+
+function spark(x,y){
+  const s = document.createElement('div');
+  s.className = 'spark';
+  s.style.left = x+'px';
+  s.style.top  = y+'px';
+  $('#game').appendChild(s);
+  setTimeout(() => s.remove(), 420);
+}
+
+/* =========================================================
+   Buff 三选一
+========================================================= */
+function showBuffChoice(){
+  state.paused = true;
+
+  const pool = BUFFS.filter(b => (state.buffStacks[b.id]||0) < b.max);
+  const picks = shuffle(pool.slice()).slice(0, 3);
+
+  const ov = $('#overlay');
+  ov.className = 'show';
+  ov.innerHTML = `
+    <div class="modal">
+      <div class="modal-title">🎁 广告已关闭 · 选择一项强化</div>
+      <div class="cards">
+        ${picks.map((b,idx) => {
+          const lv = state.buffStacks[b.id] || 0;
+          return `<div class="card" data-idx="${idx}">
+            <div class="card-icon">${b.icon}</div>
+            <div class="card-name">${b.name}</div>
+            <div class="card-desc">${b.desc}</div>
+            <div class="card-lv">Lv.${lv} → Lv.${lv+1}</div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+
+  ov.querySelectorAll('.card').forEach(card => {
+    card.addEventListener('click', () => {
+      const b = picks[+card.dataset.idx];
+      state.buffStacks[b.id] = (state.buffStacks[b.id]||0) + 1;
+      b.apply(state);
+      ov.className = '';
+      ov.innerHTML = '';
+      state.paused = false;
+      updateHUD();
+    });
+  });
+}
+
+/* =========================================================
+   主循环
+========================================================= */
+function update(dt){
+  if (!state.running || state.paused) return;
+
+  state.time += dt;
+
+  // 耐心消耗
+  const drain = (0.15 * state.buffs.baseDrainMul + state.ads.length * 0.13) * dt;
+  state.patience -= drain;
+
+  if (state.patience <= 0){
+    state.patience = 0;
+    updateHUD();
+    gameOver();
+    return;
+  }
+
+  // 自动拦截
+  if (state.buffs.autoClose > 0){
+    state.autoT -= dt;
+    if (state.autoT <= 0){
+      state.autoT = 9 / state.buffs.autoClose;
+      const alive = state.ads.filter(a => !a.dead);
+      if (alive.length) closeAd(pick(alive));
+      if (!state.running || state.paused) { updateHUD(); return; }
+    }
+  }
+
+  // 每个广告自身的逻辑 + 增殖
+  for (const ad of state.ads.slice()){
+    if (ad.dead) continue;
+    if (ad.tick) ad.tick(dt);
+    if (ad.dead) continue;
+
+    ad.breedT -= dt;
+    if (ad.breedT <= 0){
+      ad.breedT = breedInterval();
+      spawnAd();
+    }
+  }
+
+  // 场上空了就补一个
+  if (state.ads.length === 0){
+    state.emptyT += dt;
+    if (state.emptyT > 1.0){
+      state.emptyT = 0;
+      spawnAd();
+    }
+  } else {
+    state.emptyT = 0;
+  }
+
+  updateHUD();
+}
+
+let lastT = performance.now();
+function loop(now){
+  const dt = Math.min(0.05, (now - lastT) / 1000);
+  lastT = now;
+  update(dt);
+  requestAnimationFrame(loop);
+}
+
+/* =========================================================
+   开始 / 胜利 / 失败
+========================================================= */
+function resetState(){
+  state.ads.forEach(a => a.el.remove());
+  state.ads = [];
+  state.running = true;
+  state.paused = false;
+  state.patience = 130;
+  state.maxPatience = 130;
+  state.progress = 0;
+  state.closes = 0;
+  state.time = 0;
+  state.buffStacks = {};
+  state.spawnMul = 1;
+  state.autoT = 9;
+  state.emptyT = 0;
+  state.buffs = {
+    patiencePerClose:0, extraProgress:0, chainChance:0,
+    baseDrainMul:1, xScale:1, holdMul:1, autoClose:0
+  };
+  $('#progMax').textContent = state.target;
+  updateHUD();
+}
+
+function startGame(){
+  const ov = $('#overlay');
+  ov.className = '';
+  ov.innerHTML = '';
+  resetState();
+  spawnAd('basic');
+  spawnAd('basic');
+}
+
+function win(){
+  state.running = false;
+  state.ads.forEach(a => {
+    a.el.classList.add('closing');
+    setTimeout(() => a.el.remove(), 170);
+  });
+  state.ads = [];
+
+  const movies = ['星际穿越','大话西游之大圣娶亲','银翼杀手 2049','海上钢琴师','千与千寻'];
+  const m = pick(movies);
+  const sec = Math.floor(state.time);
+
+  const ov = $('#overlay');
+  ov.className = 'show';
+  ov.innerHTML = `
+    <div class="hero">
+      <h1 style="font-size:26px;color:#3f6;text-shadow:0 0 18px rgba(0,255,120,.6)">✓ 全 部 广 告 已 清 除</h1>
+      <h2 style="color:#9ab">用时 ${String(Math.floor(sec/60)).padStart(2,'0')}:${String(sec%60).padStart(2,'0')} · 关闭广告 ${state.closes} 个</h2>
+      <div class="movie-screen">
+        <div class="filmstrip">🎞️</div>
+        <div class="movie-title">《${m}》</div>
+        <div class="movie-sub">正在缓冲 ... 100%</div>
+      </div>
+      <div class="rules" style="text-align:center">
+        世界终于安静了。<br>
+        你靠在椅背上，喝了一口已经凉掉的茶。
+      </div>
+      <button class="bigbtn" id="againBtn">再 来 一 局</button>
+    </div>`;
+
+  $('#againBtn').onclick = startGame;
+}
+
+function gameOver(){
+  state.running = false;
+  state.ads.forEach(a => {
+    a.el.classList.add('closing');
+    setTimeout(() => a.el.remove(), 170);
+  });
+  state.ads = [];
+
+  const ov = $('#overlay');
+  ov.className = 'show';
+  ov.innerHTML = `
+    <div class="hero">
+      <h1 style="color:#f44;text-shadow:0 0 20px rgba(255,60,60,.7),3px 3px 0 #500">💥 耐 心 耗 尽</h1>
+      <h2 style="color:#c88">你把鼠标摔在了桌上，屏幕还亮着。</h2>
+      <div class="rules" style="text-align:center">
+        进度：<b>${state.progress} / ${state.target}</b><br>
+        被广告折磨了 <b>${Math.floor(state.time)}</b> 秒。<br>
+        那部电影……下次吧。
+      </div>
+      <button class="bigbtn" id="againBtn2">再 战 一 次</button>
+    </div>`;
+
+  $('#againBtn2').onclick = startGame;
+}
+
+/* =========================================================
+   启动
+========================================================= */
+$('#startBtn').onclick = startGame;
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

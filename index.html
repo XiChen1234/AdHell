@@ -20,11 +20,25 @@ body{
     repeating-linear-gradient(0deg, rgba(255,255,255,.025) 0 1px, transparent 1px 3px),
     #06060f;
 }
+#game.shake{animation:scrShake .3s}
+@keyframes scrShake{
+  0%,100%{transform:translate(0,0)}
+  20%{transform:translate(-6px,3px)}
+  40%{transform:translate(5px,-4px)}
+  60%{transform:translate(-4px,-2px)}
+  80%{transform:translate(3px,4px)}
+}
+#game.micro{animation:microShake .18s}
+@keyframes microShake{
+  0%,100%{transform:translate(0,0)}
+  35%{transform:translate(-2px,2px)}
+  70%{transform:translate(2px,-1px)}
+}
 
 /* ============ 顶栏 ============ */
 #topbar{
-  position:absolute;top:0;left:0;right:0;height:66px;
-  display:flex;align-items:center;gap:16px;padding:0 14px;
+  position:absolute;top:0;left:0;right:0;height:78px;
+  display:flex;align-items:center;gap:14px;padding:0 14px;
   background:linear-gradient(#12124a,#0a0a2a);
   border-bottom:2px solid #3a3a8a;
   box-shadow:0 2px 14px rgba(0,0,0,.85);
@@ -40,10 +54,14 @@ body{
   font-family:"Courier New",monospace;font-size:20px;font-weight:bold;
   color:#3f6;text-shadow:0 0 8px #0f6;letter-spacing:1px;
 }
-.pat-wrap{flex:1 1 auto;max-width:420px}
-.pat-top{display:flex;justify-content:space-between;font-size:11px;color:#99a;margin-bottom:3px}
-.pat-bar{height:18px;background:#000;border:2px solid #3a3a5a;border-radius:2px;overflow:hidden}
+.mid{flex:1 1 auto;max-width:480px;display:flex;flex-direction:column;gap:5px}
+.pat-top,.exp-top{display:flex;justify-content:space-between;font-size:10px;color:#99a;margin-bottom:2px}
+.pat-top{font-size:11px}
+.pat-bar{height:16px;background:#000;border:2px solid #3a3a5a;border-radius:2px;overflow:hidden}
 #patFill{height:100%;width:100%;background:#4c4;transition:width .12s linear}
+.exp-bar{height:9px;background:#000;border:1px solid #3a3a5a;border-radius:2px;overflow:hidden}
+#expFill{height:100%;width:0;background:linear-gradient(90deg,#38f,#a6f);transition:width .2s ease-out;box-shadow:0 0 8px rgba(120,100,255,.8)}
+.exp-top b{color:#c9f;font-size:12px}
 .prog-wrap{margin-left:auto;text-align:right;flex:0 0 auto}
 .prog-wrap .lbl{font-size:9px;color:#88a;letter-spacing:1px}
 .prog-wrap .val{font-family:"Courier New",monospace;font-size:19px;color:#fd4;text-shadow:0 0 8px #fa0}
@@ -62,8 +80,12 @@ body{
   color:#000;
 }
 @keyframes popin{from{transform:scale(.75);opacity:0}to{transform:scale(1);opacity:1}}
-.ad.closing{animation:popout .16s ease-in forwards}
-@keyframes popout{to{transform:scale(.75);opacity:0}}
+.ad.closing{animation:popout .24s ease-in forwards;pointer-events:none}
+@keyframes popout{
+  0%{transform:scale(1) rotate(0);opacity:1;filter:brightness(1)}
+  30%{transform:scale(1.1) rotate(-2deg);opacity:1;filter:brightness(2.2)}
+  100%{transform:scale(.35) rotate(14deg);opacity:0;filter:brightness(3)}
+}
 
 .ad-bar{
   height:20px;flex:0 0 20px;
@@ -77,19 +99,33 @@ body{
   flex:1;position:relative;overflow:hidden;
   background:#fff;padding:5px;font-size:12px;
 }
+
+/* ---- 角标按钮 ---- */
 .ad-x{
-  position:absolute;z-index:3;
+  position:absolute;z-index:6;
   background:#c0c0c0;border:1px solid;
   border-color:#fff #404040 #404040 #fff;
   color:#000;font-family:inherit;
   display:flex;align-items:center;justify-content:center;
   cursor:pointer;line-height:1;padding:0;
 }
-.ad-x:hover{background:#e8e8e8}
-.ad-x:active{border-color:#404040 #fff #fff #404040}
-.ad-x.disabled{background:#888;color:#ccc;cursor:not-allowed}
+.ad-x.fake{ background:#c0c0c0;color:#000; }
+.ad-x.fake:hover{ background:#e8e8e8; }
+.ad-x.fake:active{ border-color:#404040 #fff #fff #404040; }
+.ad-x.real{
+  background:#d40000;color:#fff;font-weight:bold;
+  border:2px solid #fff;
+  box-shadow:0 0 0 1px #600, 0 2px 5px rgba(0,0,0,.55);
+  text-shadow:0 1px 0 #500;
+}
+.ad-x.real:hover{ background:#ff2a2a; }
+.ad-x.real:active{ transform:translate(1px,1px); }
+
+.ad-x.disabled{background:#888;color:#ccc;cursor:not-allowed;box-shadow:none}
 .ad-x.tired{animation:tired .5s infinite alternate}
 @keyframes tired{to{opacity:.4}}
+.ad-x.shake{animation:btnShake .22s 2}
+@keyframes btnShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-3px)}75%{transform:translateX(3px)}}
 
 .fakebtn{
   font-family:inherit;font-size:11px;margin-top:4px;padding:2px 10px;
@@ -120,14 +156,64 @@ body{
 }
 .sl-knob:active{cursor:grabbing}
 
-/* 火花 */
-.spark{
-  position:absolute;width:14px;height:14px;margin:-7px 0 0 -7px;
-  border-radius:50%;background:#ff4;
-  box-shadow:0 0 14px #fa0,0 0 28px #f80;
-  pointer-events:none;animation:sp .4s ease-out forwards;z-index:900;
+/* ============ 关闭特效 ============ */
+.particle{
+  position:absolute;width:9px;height:9px;margin:-4.5px 0 0 -4.5px;
+  border-radius:50%;pointer-events:none;z-index:900;
+  animation:particleFly .62s cubic-bezier(.15,.75,.35,1) forwards;
 }
-@keyframes sp{to{transform:scale(2.6);opacity:0}}
+@keyframes particleFly{
+  from{transform:translate(0,0) scale(1);opacity:1}
+  to{transform:translate(var(--dx),var(--dy)) scale(.15);opacity:0}
+}
+.ring{
+  position:absolute;width:10px;height:10px;margin:-5px 0 0 -5px;
+  border:3px solid #fd4;border-radius:50%;pointer-events:none;z-index:899;
+  animation:ringOut .52s ease-out forwards;
+}
+@keyframes ringOut{
+  from{transform:scale(1);opacity:1}
+  to{transform:scale(10);opacity:0}
+}
+.float-txt{
+  position:absolute;font-size:15px;font-weight:bold;color:#fd4;
+  text-shadow:0 0 10px #fa0,2px 2px 0 #a00;
+  pointer-events:none;z-index:901;
+  animation:floatUp .85s ease-out forwards;
+  transform:translate(-50%,-50%);
+  white-space:nowrap;
+}
+@keyframes floatUp{
+  0%{transform:translate(-50%,-50%) scale(.6);opacity:0}
+  22%{transform:translate(-50%,-75%) scale(1.2);opacity:1}
+  100%{transform:translate(-50%,-170%) scale(1);opacity:0}
+}
+
+#combo{
+  position:absolute;left:50%;top:88px;transform:translateX(-50%);
+  font-size:28px;font-weight:bold;color:#ff4;
+  text-shadow:0 0 20px #fa0,3px 3px 0 #900;
+  pointer-events:none;z-index:950;opacity:0;
+  transition:opacity .18s;
+  font-family:"Courier New",monospace;letter-spacing:2px;
+}
+#combo.on{opacity:1}
+#combo.pulse{animation:comboPulse .3s ease-out}
+@keyframes comboPulse{0%{transform:translateX(-50%) scale(1.7)}100%{transform:translateX(-50%) scale(1)}}
+
+/* 红闪 */
+#flash{
+  position:fixed;inset:0;pointer-events:none;z-index:999;opacity:0;
+  background:radial-gradient(circle, rgba(255,0,0,0) 25%, rgba(255,0,0,.5) 100%);
+}
+#flash.on{animation:flashAnim .38s}
+@keyframes flashAnim{0%{opacity:1}100%{opacity:0}}
+#white{
+  position:fixed;inset:0;pointer-events:none;z-index:998;opacity:0;
+  background:#fff;
+}
+#white.on{animation:whiteAnim .22s}
+@keyframes whiteAnim{0%{opacity:.35}100%{opacity:0}}
 
 /* ============ 遮罩 / 弹窗 ============ */
 #overlay{
@@ -143,11 +229,14 @@ body{
   border:2px solid #4a4a9a;border-radius:4px;
   box-shadow:0 0 40px rgba(80,80,255,.35);
   padding:20px 22px;
+  animation:modalIn .2s ease-out;
 }
+@keyframes modalIn{from{transform:scale(.9);opacity:0}to{transform:scale(1);opacity:1}}
 .modal-title{
   text-align:center;font-size:17px;color:#fd4;
   text-shadow:0 0 12px rgba(255,200,0,.6);margin-bottom:16px;letter-spacing:1px;
 }
+.modal-title .lv{color:#9cf;font-size:14px}
 .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
 .card{
   background:linear-gradient(#242450,#14142c);
@@ -204,16 +293,26 @@ body{
       <div class="lbl">TIME CLOCK</div>
       <div class="val" id="clock">00:00</div>
     </div>
-    <div class="pat-wrap">
-      <div class="pat-top"><span>耐心度</span><span id="patNum">130</span></div>
-      <div class="pat-bar"><div id="patFill"></div></div>
+    <div class="mid">
+      <div class="pat-wrap">
+        <div class="pat-top"><span>耐心度</span><span id="patNum">140</span></div>
+        <div class="pat-bar"><div id="patFill"></div></div>
+      </div>
+      <div class="exp-wrap">
+        <div class="exp-top"><span>Lv.<b id="lvNum">1</b></span><span id="expTxt">0 / 3</span></div>
+        <div class="exp-bar"><div id="expFill"></div></div>
+      </div>
     </div>
     <div class="prog-wrap">
       <div class="lbl">净化进度</div>
-      <div class="val"><span id="progNum">0</span>/<span id="progMax">24</span></div>
+      <div class="val"><span id="progNum">0</span>/<span id="progMax">54</span></div>
     </div>
   </div>
+  <div id="combo"></div>
 </div>
+
+<div id="flash"></div>
+<div id="white"></div>
 
 <div id="overlay" class="show">
   <div class="hero">
@@ -221,11 +320,11 @@ body{
     <h2>—— 净 网 行 动 ——</h2>
     <div class="rules">
       你只想安安静静看部电影，可弹窗广告像蟑螂一样繁殖。<br>
-      · <b>关闭方式各不相同</b>：有的会跑，有的要等倒计时，有的要长按，有的要拖滑块。<br>
-      · 每关闭 <b>3 个广告</b>，随机获得 <b>三选一强化</b>，强化可叠加，组合出迥异流派。<br>
-      · 广告会 <b>自我增殖</b>，你越拖延，它越疯狂。<br>
-      · 顶部的 <b>耐心度</b> 见底 = 游戏失败。<br>
-      · 净化进度 <b>24/24</b> = 终于可以看电影了。
+      · <b>真按钮是红色 ✕，统一风格</b>；<b>灰色 ✕ 是陷阱</b>，点错扣耐心。<br>
+      · 广告总数固定，<b>关一个少一个</b>，后台库存会不断漏出新广告。<br>
+      · 关闭广告积累 <b>经验条</b>，升级所需经验线性增长；<b>升级时三选一强化</b>。<br>
+      · 连续关闭有 <b>连击</b> 加成，手感更爽。<br>
+      · 顶部的 <b>耐心度</b> 见底 = 游戏失败；把 <b>全部广告关完</b> = 看电影。
     </div>
     <button class="bigbtn" id="startBtn">开 始 上 网</button>
   </div>
@@ -233,7 +332,7 @@ body{
 
 <script>
 /* =========================================================
-   基础工具
+   工具
 ========================================================= */
 const $ = s => document.querySelector(s);
 const rand = (a,b) => a + Math.random()*(b-a);
@@ -241,10 +340,52 @@ const randInt = (a,b) => Math.floor(rand(a,b+1));
 const pick = arr => arr[(Math.random()*arr.length)|0];
 function shuffle(a){ for(let i=a.length-1;i>0;i--){const j=(Math.random()*(i+1))|0;[a[i],a[j]]=[a[j],a[i]];} return a; }
 
-const MAX_ADS = 9;
+/* ---- 合成音效 ---- */
+let actx = null;
+function ensureAudio(){
+  if (!actx){
+    try { actx = new (window.AudioContext||window.webkitAudioContext)(); } catch(_){ actx = null; }
+  }
+  if (actx && actx.state === 'suspended') actx.resume();
+}
+function beep(freq, dur, type, vol){
+  if (!actx) return;
+  try{
+    const t0 = actx.currentTime;
+    const o = actx.createOscillator();
+    const g = actx.createGain();
+    o.type = type || 'square';
+    o.frequency.setValueAtTime(freq, t0);
+    g.gain.setValueAtTime(vol || 0.05, t0);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    o.connect(g); g.connect(actx.destination);
+    o.start(t0); o.stop(t0 + dur + 0.02);
+  }catch(_){}
+}
+function chordUp(){
+  beep(660,.09,'square',.05);
+  setTimeout(()=>beep(880,.10,'square',.05),80);
+  setTimeout(()=>beep(1180,.14,'triangle',.05),170);
+}
 
 /* =========================================================
-   广告素材（复古网页风）
+   核心配置
+========================================================= */
+const CFG = {
+  TOTAL_ADS: 54,
+  INITIAL_ON_SCREEN: 22,
+  SCREEN_CAP: 24,
+  LEAK_BASE: 1.05,
+  PATIENCE_MAX: 140,
+  BASE_DRAIN: 0.25,
+  PER_AD_DRAIN: 0.045,
+  FAKE_PENALTY: 12,
+  EXP_BASE: 3,       // 升级所需经验：3, 6, 9, 12 ...（线性）
+  EXP_STEP: 3,
+};
+
+/* =========================================================
+   广告素材
 ========================================================= */
 const THEMES = [
   { title:'★ 中奖通知 ★', html:`
@@ -255,7 +396,6 @@ const THEMES = [
       <div style="font-size:10px;color:#888">您是本活动第 1,048,576 位用户</div>
       <button class="fakebtn">立即领取</button>
     </div>` },
-
   { title:'系统警告', html:`
     <div style="padding:2px">
       <div style="color:#c00;font-weight:bold;font-size:12px">⚠ 检测到您的电脑存在 3 个风险</div>
@@ -266,7 +406,6 @@ const THEMES = [
       <div style="font-size:10px;color:#666">已拦截木马：<span style="color:#c00">2</span> 个</div>
       <button class="fakebtn" style="background:#c00;color:#fff">立即修复</button>
     </div>` },
-
   { title:'缘分天空聊天室', html:`
     <div style="background:#ffe;padding:3px;text-align:center">
       <div style="font-size:11px;color:#a05">💖 同城 3 位美女正在寻找聊天对象</div>
@@ -274,7 +413,6 @@ const THEMES = [
       <div style="font-size:10px;color:#999">昵称：小甜甜 · 22 岁 · 距离 2km</div>
       <button class="fakebtn" style="background:#e05;color:#fff">立即聊天</button>
     </div>` },
-
   { title:'极速加速器', html:`
     <div style="text-align:center;background:#000;color:#0f0;padding:4px;font-family:monospace">
       <div style="font-size:11px">🚀 网速太慢？</div>
@@ -285,7 +423,6 @@ const THEMES = [
       <div style="font-size:9px;color:#080">提速至 100 Mbps</div>
       <button class="fakebtn" style="background:#0a0;color:#000">一键加速</button>
     </div>` },
-
   { title:'传奇世界', html:`
     <div style="background:#210;color:#fd0;padding:3px;text-align:center">
       <div style="font-size:12px;font-weight:bold">⚔ 一刀 999 级</div>
@@ -293,7 +430,6 @@ const THEMES = [
       <div style="font-size:20px">🗡️</div>
       <button class="fakebtn" style="background:#fd0;color:#000">进入游戏</button>
     </div>` },
-
   { title:'访客统计', html:`
     <div style="text-align:center;padding:4px;background:#f0f0ff">
       <div style="font-size:11px;color:#333">您是本站第</div>
@@ -312,55 +448,60 @@ const BUFFS = [
     desc:'每次关闭广告，恢复 6 点耐心。',
     apply:s=>{ s.buffs.patiencePerClose += 6; } },
 
-  { id:'progress', name:'效率至上', icon:'⚡', max:3,
-    desc:'每次关闭广告，额外 +1 净化进度。',
-    apply:s=>{ s.buffs.extraProgress += 1; } },
-
-  { id:'chain', name:'多米诺骨牌', icon:'🎯', max:3,
-    desc:'关闭广告时，30% 概率连带关闭另一个。',
-    apply:s=>{ s.buffs.chainChance += 0.30; } },
-
-  { id:'slowspawn', name:'弹窗拦截器', icon:'🛡️', max:3,
-    desc:'广告的自我增殖速度 -25%。',
-    apply:s=>{ s.spawnMul *= 1.34; } },
-
-  { id:'calm', name:'静音模式', icon:'🔇', max:2,
-    desc:'耐心的基础消耗 -40%。',
-    apply:s=>{ s.buffs.baseDrainMul *= 0.60; } },
-
-  { id:'bigx', name:'钛合金鼠标', icon:'🖱️', max:3,
-    desc:'所有关闭按钮尺寸 +40%。',
-    apply:s=>{ s.buffs.xScale += 0.40; } },
+  { id:'bigx', name:'钛合金鼠标', icon:'🖱️', max:4,
+    desc:'所有角标按钮尺寸 +35%，更好点。',
+    apply:s=>{ s.buffs.xScale += 0.35; } },
 
   { id:'hold', name:'连点器', icon:'⏱️', max:2,
     desc:'长按所需时间 -35%。',
     apply:s=>{ s.buffs.holdMul *= 0.65; } },
 
-  { id:'maxp', name:'续命咖啡', icon:'☕', max:2,
-    desc:'耐心上限 +30，并立即回满。',
-    apply:s=>{ s.maxPatience += 30; s.patience = s.maxPatience; } },
+  { id:'calm', name:'静音模式', icon:'🔇', max:4,
+    desc:'耐心消耗 -18%（可叠加）。',
+    apply:s=>{ s.buffs.baseDrainMul *= 0.82; } },
+
+  { id:'slowspawn', name:'弹窗拦截器', icon:'🛡️', max:4,
+    desc:'后台库存漏出速度 -22%（可叠加）。',
+    apply:s=>{ s.spawnMul *= 1.28; } },
+
+  { id:'chain', name:'多米诺骨牌', icon:'🎯', max:3,
+    desc:'关闭广告时，25% 概率连带关闭另一个。',
+    apply:s=>{ s.buffs.chainChance += 0.25; } },
+
+  { id:'maxp', name:'续命咖啡', icon:'☕', max:3,
+    desc:'耐心上限 +15，并回复 20 点耐心。',
+    apply:s=>{ s.maxPatience += 15; s.patience = Math.min(s.maxPatience, s.patience + 20); } },
 
   { id:'auto', name:'自动拦截', icon:'🤖', max:2,
     desc:'每 9 秒自动关闭一个随机广告。',
     apply:s=>{ s.buffs.autoClose += 1; } },
+
+  { id:'eyes', name:'火眼金睛', icon:'👁️', max:2,
+    desc:'假按钮有 50% 概率变暗提示（降低误点）。',
+    apply:s=>{ s.buffs.eyeHint += 0.5; } },
+
+  { id:'exp', name:'经验之书', icon:'📖', max:3,
+    desc:'每次关闭广告额外获得 1 点经验。',
+    apply:s=>{ s.buffs.expPerClose += 1; } },
 ];
 
 /* =========================================================
-   游戏状态
+   状态
 ========================================================= */
 const state = {
   running:false, paused:false,
-  patience:130, maxPatience:130,
-  progress:0, target:24,
-  closes:0, time:0,
-  ads:[],
+  patience:CFG.PATIENCE_MAX, maxPatience:CFG.PATIENCE_MAX,
+  closed:0, time:0,
+  ads:[], stock:0,
+  zCounter:100,
   buffStacks:{},
   spawnMul:1,
-  autoT:9,
-  emptyT:0,
+  leakT:0, autoT:9, emptyT:0,
+  level:1, exp:0, expToNext:CFG.EXP_BASE, pendingUps:0,
+  combo:0, comboT:0,
   buffs:{
-    patiencePerClose:0, extraProgress:0, chainChance:0,
-    baseDrainMul:1, xScale:1, holdMul:1, autoClose:0
+    patiencePerClose:0, baseDrainMul:1, xScale:1,
+    holdMul:1, chainChance:0, autoClose:0, eyeHint:0, expPerClose:0
   }
 };
 
@@ -373,7 +514,13 @@ function updateHUD(){
   fill.style.width = (p*100)+'%';
   fill.style.background = `hsl(${p*110}, 92%, 48%)`;
   $('#patNum').textContent = Math.ceil(Math.max(0, state.patience));
-  $('#progNum').textContent = Math.min(state.progress, state.target);
+
+  $('#progNum').textContent = Math.min(state.closed, CFG.TOTAL_ADS);
+  $('#progMax').textContent = CFG.TOTAL_ADS;
+
+  $('#lvNum').textContent = state.level;
+  $('#expTxt').textContent = `${Math.floor(state.exp)} / ${state.expToNext}`;
+  $('#expFill').style.width = Math.min(100, state.exp/state.expToNext*100) + '%';
 
   const t = Math.floor(state.time);
   $('#clock').textContent =
@@ -383,23 +530,16 @@ function updateHUD(){
 /* =========================================================
    广告生成
 ========================================================= */
-function breedInterval(){
-  const pressure = 1 - (state.progress / state.target) * 0.35;
-  return (10 + Math.random()*5) * state.spawnMul * pressure;
-}
-
-function pickType(){
-  const r = Math.random();
-  if (r < 0.42) return 'basic';
-  if (r < 0.58) return 'runner';
-  if (r < 0.73) return 'countdown';
-  if (r < 0.87) return 'hold';
-  return 'slider';
-}
+const CORNER_POS = {
+  tl:{left:'4px', top:'23px'},
+  tr:{right:'4px', top:'2px'},
+  bl:{left:'4px', bottom:'5px'},
+  br:{right:'4px', bottom:'5px'},
+};
 
 function randPos(w,h){
   const W = window.innerWidth, H = window.innerHeight;
-  const padTop = 80, padBottom = 20, padX = 10;
+  const padTop = 90, padBottom = 12, padX = 8;
   const maxX = W - w - padX, maxY = H - h - padBottom;
   return {
     x: maxX > padX ? rand(padX, maxX) : Math.max(0,(W-w)/2),
@@ -407,15 +547,25 @@ function randPos(w,h){
   };
 }
 
-function spawnAd(forceType){
-  if (!state.running || state.paused) return null;
-  if (state.ads.length >= MAX_ADS) return null;
+function pickType(){
+  const r = Math.random();
+  if (r < 0.40) return 'basic';
+  if (r < 0.56) return 'runner';
+  if (r < 0.72) return 'countdown';
+  if (r < 0.87) return 'hold';
+  return 'slider';
+}
 
-  const type = forceType || pickType();
+function spawnAd(opt){
+  opt = opt || {};
+  if (!state.running || state.paused) return null;
+  if (state.ads.length >= CFG.SCREEN_CAP && !opt.force) return null;
+
+  const type = opt.type || pickType();
   const theme = pick(THEMES);
-  const w = randInt(240, 285);
-  const h = randInt(152, 182);
-  const pos = randPos(w, h);
+  const w = opt.w || randInt(235, 285);
+  const h = opt.h || randInt(150, 182);
+  const pos = (opt.x !== undefined) ? {x:opt.x, y:opt.y} : randPos(w,h);
 
   const el = document.createElement('div');
   el.className = 'ad';
@@ -423,230 +573,388 @@ function spawnAd(forceType){
   el.style.height = h+'px';
   el.style.left = pos.x+'px';
   el.style.top = pos.y+'px';
-  el.style.zIndex = 10 + state.ads.length;
+  el.style.zIndex = ++state.zCounter;
 
   el.innerHTML = `
     <div class="ad-bar"><span>${theme.title}</span></div>
     <div class="ad-body">${theme.html}</div>
-    <button class="ad-x">✕</button>
   `;
 
-  const xBtn = el.querySelector('.ad-x');
-  const sc = state.buffs.xScale;
-  const bw = Math.round(16*sc), bh = Math.round(14*sc);
-  xBtn.style.width = bw+'px';
-  xBtn.style.height = bh+'px';
-  xBtn.style.fontSize = Math.round(10*sc)+'px';
-  xBtn.style.left = (w - bw - 4) + 'px';
-  xBtn.style.top = '3px';
+  const ad = { el, type, w, h, dead:false, tick:null };
 
-  const ad = {
-    el, type, w, h, xBtn,
-    breedT: breedInterval(),
-    dead: false,
-    tick: null,
-    slideP: 0
-  };
+  setupButtons(ad);
+  if (type === 'slider') setupSlider(ad);
 
-  setupClose(ad);
   $('#game').appendChild(el);
   state.ads.push(ad);
   return ad;
 }
 
 /* =========================================================
-   关闭机制
+   角标按钮
 ========================================================= */
-function setupClose(ad){
-  const { el, type, w, h, xBtn } = ad;
-  const bw = parseInt(xBtn.style.width);
-  const bh = parseInt(xBtn.style.height);
+function makeBtn(ad, corner, kind){
+  const b = document.createElement('button');
+  b.className = 'ad-x ' + kind;
+  b.textContent = '✕';
+  b.type = 'button';
 
-  switch(type){
+  const sc = state.buffs.xScale;
+  const bw = Math.round(17*sc), bh = Math.round(15*sc);
+  b.style.width = bw+'px';
+  b.style.height = bh+'px';
+  b.style.fontSize = Math.round(10*sc)+'px';
 
-    /* --- 普通：点一下 --- */
-    case 'basic': {
-      xBtn.onclick = () => closeAd(ad);
-      break;
+  const p = CORNER_POS[corner];
+  for (const k in p) b.style[k] = p[k];
+
+  ad.el.appendChild(b);
+  return b;
+}
+
+function setupButtons(ad){
+  // 滑块广告：真关闭方式是拖滑块，假按钮放顶部
+  if (ad.type === 'slider'){
+    ['tl','tr'].forEach(c => {
+      const b = makeBtn(ad, c, 'fake');
+      if (state.buffs.eyeHint > 0 && Math.random() < state.buffs.eyeHint){
+        b.style.opacity = '0.45';
+      }
+      b.addEventListener('click', e => { e.stopPropagation(); fakePunish(ad, b); });
+    });
+    return;
+  }
+
+  const others = ['tl','bl','br'];
+  const realCorner = pick(others);
+  const restFake = others.filter(c => c !== realCorner);
+  const fake2 = restFake.length ? pick(restFake) : null;
+
+  ['tr', fake2].forEach(c => {
+    if (!c) return;
+    const b = makeBtn(ad, c, 'fake');
+    if (state.buffs.eyeHint > 0 && Math.random() < state.buffs.eyeHint){
+      b.style.opacity = '0.45';
     }
+    b.addEventListener('click', e => { e.stopPropagation(); fakePunish(ad, b); });
+  });
 
-    /* --- 逃跑：鼠标靠近就跑，跑 4 次后累瘫 --- */
-    case 'runner': {
-      let dodges = 4;
-      xBtn.addEventListener('mouseenter', () => {
-        if (dodges <= 0) return;
-        dodges--;
-        xBtn.style.left = randInt(2, Math.max(3, w - bw - 2)) + 'px';
-        xBtn.style.top  = randInt(2, Math.max(3, h - bh - 2)) + 'px';
-        if (dodges === 0) xBtn.classList.add('tired');
-      });
-      xBtn.onclick = () => closeAd(ad);
-      break;
-    }
+  const rb = makeBtn(ad, realCorner, 'real');
+  bindRealButton(ad, rb);
+}
 
-    /* --- 倒计时：等 3 秒 --- */
-    case 'countdown': {
-      let t = 3;
-      xBtn.disabled = true;
-      xBtn.classList.add('disabled');
-      xBtn.textContent = t;
-      ad.tick = (dt) => {
-        t -= dt;
-        if (t <= 0){
-          xBtn.textContent = '✕';
-          xBtn.disabled = false;
-          xBtn.classList.remove('disabled');
-          ad.tick = null;
-        } else {
-          xBtn.textContent = Math.ceil(t);
-        }
-      };
-      xBtn.onclick = () => { if (!xBtn.disabled) closeAd(ad); };
-      break;
-    }
+function bindRealButton(ad, btn){
+  const type = ad.type;
 
-    /* --- 长按 --- */
-    case 'hold': {
-      const need = 0.9 * state.buffs.holdMul;
-      let hold = 0, pressing = false;
-      const paint = () => {
-        const p = Math.min(1, hold/need) * 100;
-        xBtn.style.background =
-          `linear-gradient(90deg,#3c3 ${p}%,#c0c0c0 ${p}%)`;
-      };
-      xBtn.addEventListener('pointerdown', e => {
-        e.preventDefault();
-        try { xBtn.setPointerCapture(e.pointerId); } catch(_){}
-        pressing = true;
-      });
-      const stop = () => { pressing = false; hold = 0; paint(); };
-      xBtn.addEventListener('pointerup', stop);
-      xBtn.addEventListener('pointercancel', stop);
-      ad.tick = (dt) => {
-        if (!pressing) return;
-        hold += dt;
-        paint();
-        if (hold >= need){ pressing = false; closeAd(ad); }
-      };
-      break;
-    }
-
-    /* --- 滑块 --- */
-    case 'slider': {
-      xBtn.classList.add('disabled');
-      xBtn.style.pointerEvents = 'none';
-
-      const body = el.querySelector('.ad-body');
-      body.insertAdjacentHTML('beforeend', `
-        <div class="sl-wrap">
-          <div class="sl-txt">按住滑块拖到最右侧以关闭</div>
-          <div class="sl-track">
-            <div class="sl-fill"></div>
-            <div class="sl-knob">→</div>
-          </div>
-        </div>`);
-
-      const track = body.querySelector('.sl-track');
-      const knob  = body.querySelector('.sl-knob');
-      const fill  = body.querySelector('.sl-fill');
-      let dragging = false;
-
-      const setP = (p) => {
-        p = Math.max(0, Math.min(1, p));
-        ad.slideP = p;
-        knob.style.left = `calc(${p*100}% - ${p*14}px)`;
-        fill.style.width = (p*100)+'%';
-        if (p >= 0.985) closeAd(ad);
-      };
-
-      knob.addEventListener('pointerdown', e => {
-        e.preventDefault(); e.stopPropagation();
-        dragging = true;
-        try { knob.setPointerCapture(e.pointerId); } catch(_){}
-      });
-      knob.addEventListener('pointermove', e => {
-        if (!dragging) return;
-        const r = track.getBoundingClientRect();
-        setP((e.clientX - r.left - 7) / (r.width - 14));
-      });
-      const up = () => {
-        if (!dragging) return;
-        dragging = false;
-        if (ad.slideP < 0.985) setP(0);
-      };
-      knob.addEventListener('pointerup', up);
-      knob.addEventListener('pointercancel', up);
-      break;
-    }
+  if (type === 'basic'){
+    btn.onclick = e => { e.stopPropagation(); closeAd(ad); };
+  }
+  else if (type === 'runner'){
+    let dodges = 4;
+    btn.addEventListener('mouseenter', () => {
+      if (dodges <= 0 || ad.dead) return;
+      dodges--;
+      btn.style.right = 'auto';
+      btn.style.bottom = 'auto';
+      btn.style.left = randInt(2, Math.max(3, ad.w - 22)) + 'px';
+      btn.style.top  = randInt(23, Math.max(24, ad.h - 22)) + 'px';
+      if (dodges === 0) btn.classList.add('tired');
+    });
+    btn.onclick = e => { e.stopPropagation(); closeAd(ad); };
+  }
+  else if (type === 'countdown'){
+    let t = 3;
+    btn.disabled = true;
+    btn.classList.add('disabled');
+    btn.textContent = t;
+    ad.tick = dt => {
+      t -= dt;
+      if (t <= 0){
+        btn.textContent = '✕';
+        btn.disabled = false;
+        btn.classList.remove('disabled');
+        ad.tick = null;
+      } else {
+        btn.textContent = Math.ceil(t);
+      }
+    };
+    btn.onclick = e => {
+      e.stopPropagation();
+      if (!btn.disabled) closeAd(ad);
+    };
+  }
+  else if (type === 'hold'){
+    const need = 0.9 * state.buffs.holdMul;
+    let hold = 0, pressing = false;
+    const paint = () => {
+      const p = Math.min(1, hold/need) * 100;
+      btn.style.background = `linear-gradient(90deg,#00c000 ${p}%,#d40000 ${p}%)`;
+    };
+    btn.addEventListener('pointerdown', e => {
+      e.preventDefault(); e.stopPropagation();
+      try { btn.setPointerCapture(e.pointerId); } catch(_){}
+      pressing = true;
+    });
+    const stop = () => { pressing = false; hold = 0; paint(); };
+    btn.addEventListener('pointerup', stop);
+    btn.addEventListener('pointercancel', stop);
+    ad.tick = dt => {
+      if (!pressing || ad.dead) return;
+      hold += dt;
+      paint();
+      if (hold >= need){ pressing = false; closeAd(ad); }
+    };
   }
 }
 
 /* =========================================================
-   关闭广告
+   滑块关闭
+========================================================= */
+function setupSlider(ad){
+  const body = ad.el.querySelector('.ad-body');
+  body.insertAdjacentHTML('beforeend', `
+    <div class="sl-wrap">
+      <div class="sl-txt">按住滑块拖到最右侧以关闭</div>
+      <div class="sl-track">
+        <div class="sl-fill"></div>
+        <div class="sl-knob">→</div>
+      </div>
+    </div>`);
+
+  const track = body.querySelector('.sl-track');
+  const knob  = body.querySelector('.sl-knob');
+  const fill  = body.querySelector('.sl-fill');
+  let dragging = false, pct = 0;
+
+  const setP = p => {
+    p = Math.max(0, Math.min(1, p));
+    pct = p;
+    knob.style.left = `calc(${p*100}% - ${p*14}px)`;
+    fill.style.width = (p*100)+'%';
+    if (p >= 0.985) closeAd(ad);
+  };
+
+  knob.addEventListener('pointerdown', e => {
+    e.preventDefault(); e.stopPropagation();
+    dragging = true;
+    try { knob.setPointerCapture(e.pointerId); } catch(_){}
+  });
+  knob.addEventListener('pointermove', e => {
+    if (!dragging) return;
+    const r = track.getBoundingClientRect();
+    setP((e.clientX - r.left - 7) / (r.width - 14));
+  });
+  const up = () => {
+    if (!dragging) return;
+    dragging = false;
+    if (pct < 0.985) setP(0);
+  };
+  knob.addEventListener('pointerup', up);
+  knob.addEventListener('pointercancel', up);
+}
+
+/* =========================================================
+   点错假按钮
+========================================================= */
+function fakePunish(ad, btn){
+  if (ad.dead || !state.running || state.paused) return;
+
+  state.patience -= CFG.FAKE_PENALTY;
+  btn.classList.add('shake');
+  setTimeout(() => btn.classList.remove('shake'), 460);
+
+  const g = $('#game');
+  g.classList.remove('shake');
+  void g.offsetWidth;
+  g.classList.add('shake');
+
+  const f = $('#flash');
+  f.classList.remove('on');
+  void f.offsetWidth;
+  f.classList.add('on');
+
+  beep(140, 0.22, 'sawtooth', 0.07);
+
+  updateHUD();
+  if (state.patience <= 0){
+    state.patience = 0;
+    updateHUD();
+    gameOver();
+  }
+}
+
+/* =========================================================
+   关闭广告 + 特效
 ========================================================= */
 function closeAd(ad){
-  if (!ad || ad.dead) return;
+  if (!ad || ad.dead || !state.running) return;
   ad.dead = true;
 
   const i = state.ads.indexOf(ad);
   if (i >= 0) state.ads.splice(i, 1);
 
   const r = ad.el.getBoundingClientRect();
-  spark(r.left + r.width/2, r.top + r.height/2);
+  const cx = r.left + r.width/2, cy = r.top + r.height/2;
+
+  // 连击
+  state.combo++;
+  state.comboT = 1.8;
+
+  burst(cx, cy, state.combo);
+  showCombo(state.combo);
+
+  // 音效：音高随连击上升
+  beep(500 + Math.min(14, state.combo) * 55, 0.10, 'square', 0.045);
+
+  // 轻微屏震
+  const g = $('#game');
+  g.classList.remove('micro');
+  void g.offsetWidth;
+  g.classList.add('micro');
 
   ad.el.classList.add('closing');
-  setTimeout(() => ad.el.remove(), 170);
+  setTimeout(() => { if (ad.el.parentNode) ad.el.remove(); }, 240);
 
-  state.progress += 1 + state.buffs.extraProgress;
-  state.closes++;
+  state.closed++;
 
+  // 耐心回复
   if (state.buffs.patiencePerClose){
     state.patience = Math.min(state.maxPatience,
       state.patience + state.buffs.patiencePerClose);
   }
 
-  if (state.progress >= state.target){ win(); return; }
+  // 经验
+  gainExp(1 + state.buffs.expPerClose);
+
+  // 胜利
+  if (state.closed >= CFG.TOTAL_ADS){
+    updateHUD();
+    win();
+    return;
+  }
 
   // 连锁
   if (state.buffs.chainChance > 0 && Math.random() < state.buffs.chainChance){
     const others = state.ads.filter(a => !a.dead);
     if (others.length){
       const t = pick(others);
-      setTimeout(() => closeAd(t), 150);
+      setTimeout(() => { if (!t.dead && state.running) closeAd(t); }, 130);
     }
   }
 
-  // 每 3 次 -> 三选一
-  if (state.closes % 3 === 0 && !state.paused){
-    showBuffChoice();
-  }
-
   updateHUD();
+
+  // 升级选技能
+  if (state.pendingUps > 0 && !state.paused && state.running){
+    setTimeout(openLevelUp, 240);
+  }
 }
 
-function spark(x,y){
-  const s = document.createElement('div');
-  s.className = 'spark';
-  s.style.left = x+'px';
-  s.style.top  = y+'px';
-  $('#game').appendChild(s);
-  setTimeout(() => s.remove(), 420);
+/* ---- 经验与升级 ---- */
+function gainExp(n){
+  if (!state.running) return;
+  state.exp += n;
+  while (state.exp >= state.expToNext){
+    state.exp -= state.expToNext;
+    state.level++;
+    state.expToNext = CFG.EXP_BASE + (state.level - 1) * CFG.EXP_STEP;
+    state.pendingUps++;
+  }
+}
+
+function openLevelUp(){
+  if (!state.running || state.paused || state.pendingUps <= 0) return;
+  showBuffChoice();
+}
+
+/* =========================================================
+   关闭特效
+========================================================= */
+function burst(x, y, comboN){
+  const n = 9 + Math.min(12, comboN * 2);
+  for (let i = 0; i < n; i++){
+    const p = document.createElement('div');
+    p.className = 'particle';
+    const ang = Math.random() * Math.PI * 2;
+    const dist = rand(28, 70) + Math.min(110, comboN * 9);
+    p.style.setProperty('--dx', (Math.cos(ang)*dist).toFixed(1)+'px');
+    p.style.setProperty('--dy', (Math.sin(ang)*dist + 18).toFixed(1)+'px');
+    p.style.left = x+'px';
+    p.style.top  = y+'px';
+    p.style.background = `hsl(${randInt(28,62)},100%,${randInt(55,78)}%)`;
+    p.style.boxShadow = `0 0 10px hsl(${randInt(28,62)},100%,60%)`;
+    const sz = randInt(6, 12);
+    p.style.width = sz+'px';
+    p.style.height = sz+'px';
+    p.style.margin = (-sz/2)+'px 0 0 '+(-sz/2)+'px';
+    $('#game').appendChild(p);
+    setTimeout(() => p.remove(), 640);
+  }
+
+  // 冲击波
+  const ring = document.createElement('div');
+  ring.className = 'ring';
+  ring.style.left = x+'px';
+  ring.style.top  = y+'px';
+  ring.style.borderColor = `hsl(${randInt(35,58)},100%,60%)`;
+  $('#game').appendChild(ring);
+  setTimeout(() => ring.remove(), 540);
+
+  // 浮动经验文字
+  const t = document.createElement('div');
+  t.className = 'float-txt';
+  t.textContent = '+1 EXP';
+  t.style.left = x+'px';
+  t.style.top  = y+'px';
+  t.style.color = '#fd4';
+  $('#game').appendChild(t);
+  setTimeout(() => t.remove(), 880);
+}
+
+function showCombo(n){
+  const el = $('#combo');
+  if (n < 3){ el.classList.remove('on'); return; }
+  el.textContent = 'x' + n + ' COMBO';
+  el.style.color = n >= 10 ? '#ff6' : '#ff4';
+  el.classList.add('on');
+  el.classList.remove('pulse');
+  void el.offsetWidth;
+  el.classList.add('pulse');
+}
+
+function hideCombo(){
+  const el = $('#combo');
+  el.classList.remove('on');
 }
 
 /* =========================================================
    Buff 三选一
 ========================================================= */
 function showBuffChoice(){
+  if (!state.running) return;
   state.paused = true;
+  chordUp();
 
   const pool = BUFFS.filter(b => (state.buffStacks[b.id]||0) < b.max);
-  const picks = shuffle(pool.slice()).slice(0, 3);
+  let picks = shuffle(pool.slice()).slice(0, 3);
 
   const ov = $('#overlay');
+
+  // 池子空了直接跳过
+  if (picks.length === 0){
+    state.pendingUps--;
+    ov.className = '';
+    ov.innerHTML = '';
+    if (state.pendingUps > 0) setTimeout(showBuffChoice, 160);
+    else state.paused = false;
+    updateHUD();
+    return;
+  }
+
   ov.className = 'show';
   ov.innerHTML = `
     <div class="modal">
-      <div class="modal-title">🎁 广告已关闭 · 选择一项强化</div>
+      <div class="modal-title">⬆ 升级！<span class="lv">Lv.${state.level}</span> · 选择一项强化</div>
       <div class="cards">
         ${picks.map((b,idx) => {
           const lv = state.buffStacks[b.id] || 0;
@@ -665,11 +973,29 @@ function showBuffChoice(){
       const b = picks[+card.dataset.idx];
       state.buffStacks[b.id] = (state.buffStacks[b.id]||0) + 1;
       b.apply(state);
+      if (b.id === 'bigx') refreshButtonSizes();
+
+      state.pendingUps--;
       ov.className = '';
       ov.innerHTML = '';
-      state.paused = false;
       updateHUD();
+
+      if (state.pendingUps > 0){
+        setTimeout(showBuffChoice, 170);
+      } else {
+        state.paused = false;
+      }
     });
+  });
+}
+
+function refreshButtonSizes(){
+  const sc = state.buffs.xScale;
+  const bw = Math.round(17*sc), bh = Math.round(15*sc);
+  document.querySelectorAll('.ad-x').forEach(b => {
+    b.style.width = bw+'px';
+    b.style.height = bh+'px';
+    b.style.fontSize = Math.round(10*sc)+'px';
   });
 }
 
@@ -681,8 +1007,18 @@ function update(dt){
 
   state.time += dt;
 
+  // 连击计时
+  if (state.comboT > 0){
+    state.comboT -= dt;
+    if (state.comboT <= 0){
+      state.combo = 0;
+      hideCombo();
+    }
+  }
+
   // 耐心消耗
-  const drain = (0.15 * state.buffs.baseDrainMul + state.ads.length * 0.13) * dt;
+  const drain = (CFG.BASE_DRAIN + state.ads.length * CFG.PER_AD_DRAIN)
+                * state.buffs.baseDrainMul * dt;
   state.patience -= drain;
 
   if (state.patience <= 0){
@@ -703,24 +1039,28 @@ function update(dt){
     }
   }
 
-  // 每个广告自身的逻辑 + 增殖
+  // 广告自身逻辑
   for (const ad of state.ads.slice()){
     if (ad.dead) continue;
     if (ad.tick) ad.tick(dt);
-    if (ad.dead) continue;
+  }
 
-    ad.breedT -= dt;
-    if (ad.breedT <= 0){
-      ad.breedT = breedInterval();
+  // 后台库存漏出
+  if (state.stock > 0 && state.ads.length < CFG.SCREEN_CAP){
+    state.leakT -= dt;
+    if (state.leakT <= 0){
+      state.leakT = CFG.LEAK_BASE * state.spawnMul;
+      state.stock--;
       spawnAd();
     }
   }
 
-  // 场上空了就补一个
-  if (state.ads.length === 0){
+  // 场上空了就补
+  if (state.ads.length === 0 && state.stock > 0){
     state.emptyT += dt;
-    if (state.emptyT > 1.0){
+    if (state.emptyT > 0.5){
       state.emptyT = 0;
+      state.stock--;
       spawnAd();
     }
   } else {
@@ -739,48 +1079,96 @@ function loop(now){
 }
 
 /* =========================================================
+   开局随机布局
+========================================================= */
+function randomStartLayout(count){
+  const W = window.innerWidth, H = window.innerHeight;
+  const top = 92, bottom = 16;
+  const placed = [];
+
+  for (let i = 0; i < count; i++){
+    const w = randInt(235, 285);
+    const h = randInt(150, 182);
+    const maxX = Math.max(6, W - w - 10);
+    const maxY = Math.max(top + 2, H - h - bottom);
+
+    let best = null, bestOverlap = Infinity;
+    for (let t = 0; t < 26; t++){
+      const x = rand(10, Math.max(11, maxX));
+      const y = rand(top, Math.max(top + 1, maxY));
+      let ov = 0;
+      for (const p of placed){
+        const ox = Math.max(0, Math.min(x+w, p.x+p.w) - Math.max(x, p.x));
+        const oy = Math.max(0, Math.min(y+h, p.y+p.h) - Math.max(y, p.y));
+        ov += ox * oy;
+      }
+      if (ov < bestOverlap){ bestOverlap = ov; best = {x, y, w, h}; }
+      if (ov === 0) break;
+    }
+    placed.push(best);
+  }
+  return placed;
+}
+
+/* =========================================================
    开始 / 胜利 / 失败
 ========================================================= */
 function resetState(){
-  state.ads.forEach(a => a.el.remove());
+  state.ads.forEach(a => { if (a.el.parentNode) a.el.remove(); });
   state.ads = [];
   state.running = true;
   state.paused = false;
-  state.patience = 130;
-  state.maxPatience = 130;
-  state.progress = 0;
-  state.closes = 0;
+  state.patience = CFG.PATIENCE_MAX;
+  state.maxPatience = CFG.PATIENCE_MAX;
+  state.closed = 0;
   state.time = 0;
   state.buffStacks = {};
   state.spawnMul = 1;
+  state.leakT = CFG.LEAK_BASE;
   state.autoT = 9;
   state.emptyT = 0;
+  state.zCounter = 100;
+  state.level = 1;
+  state.exp = 0;
+  state.expToNext = CFG.EXP_BASE;
+  state.pendingUps = 0;
+  state.combo = 0;
+  state.comboT = 0;
   state.buffs = {
-    patiencePerClose:0, extraProgress:0, chainChance:0,
-    baseDrainMul:1, xScale:1, holdMul:1, autoClose:0
+    patiencePerClose:0, baseDrainMul:1, xScale:1,
+    holdMul:1, chainChance:0, autoClose:0, eyeHint:0, expPerClose:0
   };
-  $('#progMax').textContent = state.target;
+  state.stock = CFG.TOTAL_ADS - CFG.INITIAL_ON_SCREEN;
+  hideCombo();
   updateHUD();
 }
 
 function startGame(){
+  ensureAudio();
   const ov = $('#overlay');
   ov.className = '';
   ov.innerHTML = '';
   resetState();
-  spawnAd('basic');
-  spawnAd('basic');
+
+  // 随机铺满开局
+  const positions = randomStartLayout(CFG.INITIAL_ON_SCREEN);
+  positions.forEach(p => {
+    spawnAd({ x:p.x, y:p.y, w:p.w, h:p.h, force:true });
+  });
+
+  updateHUD();
 }
 
 function win(){
   state.running = false;
   state.ads.forEach(a => {
     a.el.classList.add('closing');
-    setTimeout(() => a.el.remove(), 170);
+    setTimeout(() => { if (a.el.parentNode) a.el.remove(); }, 240);
   });
   state.ads = [];
+  hideCombo();
 
-  const movies = ['星际穿越','大话西游之大圣娶亲','银翼杀手 2049','海上钢琴师','千与千寻'];
+  const movies = ['星际穿越','大话西游之大圣娶亲','银翼杀手 2049','海上钢琴师','千与千寻','肖申克的救赎'];
   const m = pick(movies);
   const sec = Math.floor(state.time);
 
@@ -789,7 +1177,7 @@ function win(){
   ov.innerHTML = `
     <div class="hero">
       <h1 style="font-size:26px;color:#3f6;text-shadow:0 0 18px rgba(0,255,120,.6)">✓ 全 部 广 告 已 清 除</h1>
-      <h2 style="color:#9ab">用时 ${String(Math.floor(sec/60)).padStart(2,'0')}:${String(sec%60).padStart(2,'0')} · 关闭广告 ${state.closes} 个</h2>
+      <h2 style="color:#9ab">用时 ${String(Math.floor(sec/60)).padStart(2,'0')}:${String(sec%60).padStart(2,'0')} · 关闭广告 ${state.closed} 个 · 达到 Lv.${state.level}</h2>
       <div class="movie-screen">
         <div class="filmstrip">🎞️</div>
         <div class="movie-title">《${m}》</div>
@@ -806,12 +1194,15 @@ function win(){
 }
 
 function gameOver(){
+  if (!state.running) return;
   state.running = false;
+
   state.ads.forEach(a => {
     a.el.classList.add('closing');
-    setTimeout(() => a.el.remove(), 170);
+    setTimeout(() => { if (a.el.parentNode) a.el.remove(); }, 240);
   });
   state.ads = [];
+  hideCombo();
 
   const ov = $('#overlay');
   ov.className = 'show';
@@ -820,7 +1211,7 @@ function gameOver(){
       <h1 style="color:#f44;text-shadow:0 0 20px rgba(255,60,60,.7),3px 3px 0 #500">💥 耐 心 耗 尽</h1>
       <h2 style="color:#c88">你把鼠标摔在了桌上，屏幕还亮着。</h2>
       <div class="rules" style="text-align:center">
-        进度：<b>${state.progress} / ${state.target}</b><br>
+        已关闭：<b>${state.closed} / ${CFG.TOTAL_ADS}</b> · 达到 <b>Lv.${state.level}</b><br>
         被广告折磨了 <b>${Math.floor(state.time)}</b> 秒。<br>
         那部电影……下次吧。
       </div>
@@ -834,6 +1225,9 @@ function gameOver(){
    启动
 ========================================================= */
 $('#startBtn').onclick = startGame;
+$('#progMax').textContent = CFG.TOTAL_ADS;
+$('#patNum').textContent = CFG.PATIENCE_MAX;
+updateHUD();
 requestAnimationFrame(loop);
 </script>
 </body>
